@@ -1,0 +1,204 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+CSV-Word转换工具包
+
+这是一个专业的CSV到Word文档转换工具，支持多种模板和自定义配置。
+
+主要功能:
+- CSV数据读取和处理
+- 多种Word文档模板支持
+- 图片下载和嵌入
+- 自定义样式和格式
+- 批量处理能力
+
+使用示例:
+    >>> from csv_word_converter import csv_to_word_universal
+    >>> result = csv_to_word_universal(
+    ...     csv_file="data.csv",
+    ...     template_type="guoziwei"
+    ... )
+    >>> print(f"生成的文档: {result}")
+
+作者: AI Development Team
+版本: 1.0.0
+许可证: MIT
+"""
+
+import logging
+from typing import Any, Dict, List, Optional
+
+# 版本信息
+__version__ = "1.0.0"
+__author__ = "AI Development Team"
+__email__ = "dev@example.com"
+__license__ = "MIT"
+
+# 配置日志
+logger = logging.getLogger(__name__)
+
+# 导入核心功能
+try:
+    from .core import (
+        ConfigBasedTemplate,
+        DocumentTemplate,
+        UniversalDocumentGenerator,
+        csv_to_word_universal,
+    )
+
+    # 导入工具函数
+    from .utils.doc_utils import (
+        create_target_bookmark_by_keyword_enhanced,
+        apply_paragraph_format,
+        add_internal_hyperlink,
+        add_bookmark,
+    )
+    from .utils.image_downloader import (
+        EnhancedImageDownloader,
+    )
+
+except ImportError as e:
+    logger.warning(f"部分模块导入失败: {e}")
+
+    # 定义基本的占位符函数
+    def csv_to_word_universal(*args, **kwargs):
+        """占位符函数，实际实现在core模块中"""
+        raise ImportError("核心模块未正确导入，请检查依赖安装")
+
+
+# 公共API列表
+__all__ = [
+    # 版本信息
+    "__version__",
+    # 核心功能
+    "csv_to_word_universal",
+    "validate_csv_file", 
+    "get_available_templates",
+    # 模板类
+    "DocumentTemplate",
+    "ConfigBasedTemplate",
+    # 文档生成器
+    "UniversalDocumentGenerator",
+    # 工具函数
+    "convert_csv_to_word",
+    "list_templates",
+    "validate_csv",
+    # 工具类
+    "EnhancedImageDownloader",
+    # 工具函数
+    "create_target_bookmark_by_keyword_enhanced",
+    "apply_paragraph_format",
+    "add_internal_hyperlink",
+    "add_bookmark",
+]
+
+
+# 便捷函数定义
+def convert_csv_to_word(
+    csv_file: str, template_type: str = "default", output_dir: Optional[str] = None, **kwargs
+) -> str:
+    """
+    便捷的CSV到Word转换函数
+
+    参数:
+        csv_file: CSV文件路径
+        template_type: 模板类型，默认为"default"
+        output_dir: 输出目录，默认为None（自动生成）
+        **kwargs: 其他参数传递给核心转换函数
+
+    返回:
+        str: 生成的Word文档路径
+
+    异常:
+        FileNotFoundError: CSV文件不存在
+        ValueError: 模板类型不支持
+        RuntimeError: 转换过程中出现错误
+    """
+    try:
+        return csv_to_word_universal(csv_file=csv_file, template_type=template_type, output_dir=output_dir, **kwargs)
+    except Exception as e:
+        logger.error(f"CSV转Word失败: {e}")
+        raise
+
+
+def get_available_templates() -> List[str]:
+    """
+    获取可用的模板列表
+
+    返回:
+        List[str]: 可用模板名称列表
+    """
+    try:
+        # 使用TemplateFactory获取实际可用的模板
+        from .core import TemplateFactory
+        factory = TemplateFactory()
+        return factory.get_available_templates()
+    except Exception:
+        # 如果配置文件不存在或有问题，返回默认列表
+        return ["guoziwei"]
+
+
+def validate_csv_file(csv_file: str) -> Dict[str, Any]:
+    """
+    验证CSV文件的有效性
+
+    参数:
+        csv_file: CSV文件路径
+
+    返回:
+        Dict[str, Any]: 验证结果，包含is_valid、row_count、column_count等信息
+
+    异常:
+        FileNotFoundError: 文件不存在
+    """
+    import os
+
+    import pandas as pd
+
+    if not os.path.exists(csv_file):
+        raise FileNotFoundError(f"CSV文件不存在: {csv_file}")
+
+    try:
+        # 读取CSV文件进行验证
+        df = pd.read_csv(csv_file)
+
+        return {
+            "is_valid": True,
+            "file_path": csv_file,
+            "file_size": os.path.getsize(csv_file),
+            "row_count": len(df),
+            "column_count": len(df.columns),
+            "columns": df.columns.tolist(),
+            "has_header": True,  # 假设有表头
+            "encoding": "utf-8",  # 默认编码
+        }
+
+    except Exception as e:
+        logger.error(f"CSV文件验证失败: {e}")
+        return {
+            "is_valid": False,
+            "error": str(e),
+            "file_path": csv_file,
+        }
+
+
+# 包级别配置
+def configure_logging(level: str = "INFO") -> None:
+    """
+    配置包的日志级别
+
+    参数:
+        level: 日志级别 (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    """
+    numeric_level = getattr(logging, level.upper(), None)
+    if not isinstance(numeric_level, int):
+        raise ValueError(f"无效的日志级别: {level}")
+
+    logging.basicConfig(level=numeric_level, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    logger.setLevel(numeric_level)
+
+
+# 包初始化时的默认配置
+configure_logging("INFO")
+
+logger.info(f"CSV-Word转换工具包 v{__version__} 已加载")

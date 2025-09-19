@@ -1,0 +1,69 @@
+# MANIFEST.in - 指定包含在分发包中的额外文件
+
+# 包含文档文件
+include README.md
+include LICENSE
+include CHANGELOG.md
+include requirements.txt
+include requirements-dev.txt
+
+# 包含配置文件
+include pyproject.toml
+include setup.py
+include setup.cfg
+
+# 包含模板文件
+recursive-include src/csv_word_converter/templates *.docx *.yaml *.yml
+recursive-include ab_doc_temps *.docx
+recursive-include ab_response_formats *.docx
+
+# 包含配置文件
+recursive-include src/csv_word_converter/config *.yaml *.yml *.json
+
+# 包含测试文件
+recursive-include tests *.py
+include tests/data/*.csv
+include tests/data/*.docx
+include tests/fixtures/*.yaml
+
+# 包含脚本文件
+include scripts/*.py
+include scripts/*.sh
+include scripts/*.bat
+
+# 排除不需要的文件
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude *.pyd
+global-exclude __pycache__
+global-exclude .git*
+global-exclude .DS_Store
+global-exclude *.so
+global-exclude *.dylib
+global-exclude *.dll
+
+# 排除开发和构建文件
+global-exclude .venv
+global-exclude .env
+global-exclude .pytest_cache
+global-exclude .mypy_cache
+global-exclude .coverage
+global-exclude htmlcov
+global-exclude build
+global-exclude dist
+global-exclude *.egg-info
+
+# 排除前端文件
+global-exclude frontend/*
+global-exclude node_modules/*
+
+# 排除输出文件
+global-exclude outputs/*.docx
+global-exclude outputs/*_backup.docx
+global-exclude uploads/*
+
+# 排除临时文件
+global-exclude *.tmp
+global-exclude *.temp
+global-exclude *~
+global-exclude *.bak

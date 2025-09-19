@@ -1,0 +1,138 @@
+templates:
+  guoziwei:
+    name: "国资委模板"
+    start_template: "ab_response_formats/guoziwei_start.docx"
+    end_template: "ab_response_formats/guoziwei_end.docx"
+    target_bookmark: "目录"  # 国资委模板的目标书签
+    return_link:
+      text: "返回目录"  # 返回链接显示文本
+      font_name: "宋体"
+      font_size: 12  # 小四
+      font_color: "blue"  # 蓝色
+      alignment: "right"
+      underline: true  # 下划线
+    title_mapping:
+      # 标题字段到Word标题级别的映射
+      heading_1: 1  # heading_1 -> Heading 1
+      heading_2: 2  # heading_2 -> Heading 2  
+      title: 3      # title -> Heading 3 (国资委模板使用3级标题)
+    styles:
+      heading_1: {}
+      heading_2: {}
+      title:
+        alignment: "center"  # 标题居中对齐
+      content:
+        first_line_indent: 2  # 首行缩进2字符
+        alignment: "justify"  # 两端对齐
+      source_date:
+        font_name: "宋体"
+        font_size: 12
+        alignment: "center"  # 信源和日期居中对齐
+        space_after: 12
+        
+  new_energy:
+    name: "新能源模板"
+    start_template: "ab_response_formats/new_enegry_start.docx"
+    end_template: "ab_response_formats/new_enegry_end.docx"
+    target_bookmark: "本期要目"  # 新能源模板的目标书签
+    return_link:
+      text: "返回目录"  # 新能源模板使用不同的文本
+      font_name: "宋体"
+      font_size: 12  # 小四
+      font_color: "red"  # 红色
+      alignment: "right"
+      underline: false  # 无下划线
+    title_mapping:
+      # 标题字段到Word标题级别的映射
+      heading_1: 1  # heading_1 -> Heading 1
+      heading_2: 2  # heading_2 -> Heading 2
+      title: 4      # title -> Heading 4 (新能源模板使用4级标题)
+    styles:
+      # 样式配置为空，使用模板中的默认样式
+      heading_1: {}
+      heading_2: {}
+      title:
+        alignment: "center"  # 标题居中对齐
+      content:
+          first_line_indent: 2  # 首行缩进2字符
+          alignment: "justify"  # 两端对齐
+
+  
+  realty:
+    name: "房地产模板"
+    start_template: "ab_response_formats/Realty_start.docx"
+    end_template: "ab_response_formats/Realty_end.docx"
+    target_bookmark: "目录"  # 房地产模板的目标书签
+    return_link:
+      text: "返回目录"  # 返回链接显示文本
+      font_name: "宋体"
+      font_size: 12  # 小四
+      font_color: "red"  # 红色
+      alignment: "right"
+      underline: false  # 无下划线
+    title_mapping:
+      # 标题字段到Word标题级别的映射
+      heading_1: 1  # heading_1 -> Heading 1
+      heading_2: 2  # heading_2 -> Heading 2
+      heading_3: 3  # heading_3 -> Heading 3 (新增三级标题支持)
+      title: 4      # title -> Heading 4 (房地产模板使用4级标题)
+    styles:
+      heading_1: {}
+      heading_2: {}
+      heading_3: {}  # 新增三级标题样式配置
+      title:
+        alignment: "center"  # 标题居中对齐
+      content:
+        first_line_indent: 2  # 首行缩进2字符
+        alignment: "justify"  # 两端对齐
+
+  technology:
+    name: "科技与产业模板"
+    start_template: "ab_response_formats/science,technology_start.docx"
+    end_template: "ab_response_formats/science,technology_end.docx"
+    target_bookmark: "目录"  # 科技与产业模板的目标书签
+    return_link:
+      text: "返回目录"  # 返回链接显示文本
+      font_name: "宋体"
+      font_size: 10.5  # 五号
+      font_color: "blue"  # 蓝色
+      alignment: "right"
+      underline: true  # 下划线
+    title_mapping:
+      # 标题字段到Word标题级别的映射
+      heading_1: 1  # heading_1 -> Heading 1
+      heading_2: 2  # heading_2 -> Heading 2
+      title: 3      # title -> Heading 3 (科技与产业模板使用3级标题)
+    styles:
+      heading_1: {}
+      heading_2: {}
+      title:
+        alignment: "center"  # 标题居中对齐
+      content: {}
+
+
+  electricity:
+    name: "电力模板"
+    start_template: "ab_response_formats/electricity_start.docx"
+    end_template: "ab_response_formats/electricity_end.docx"
+    target_bookmark: "目录"  # 电力模板的目标书签
+    return_link:
+      text: "返回目录"  # 返回链接显示文本
+      font_name: "宋体"
+      font_size: 12  # 小四
+      font_color: "red"  # 红色
+      alignment: "right"
+      underline: false  # 无下划线
+    title_mapping:
+      # 标题字段到Word标题级别的映射
+      heading_1: 1  # heading_1 -> Heading 1
+      heading_2: 2  # heading_2 -> Heading 2
+      title: 4      # title -> Heading 4 (电力模板使用4级标题)
+    styles:
+      heading_1: {}
+      heading_2: {}
+      title:
+        alignment: "center"  # 标题居中对齐
+      content:
+        first_line_indent: 2  # 首行缩进2字符
+        alignment: "justify"  # 两端对齐

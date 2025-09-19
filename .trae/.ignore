@@ -1,0 +1,25 @@
+# Trae 索引忽略清单（追加于 .gitignore 之后生效）
+# 目的：提升索引质量，排除二进制与构建产物、缓存与临时文件
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+
+# Node/Frontend
+**/node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.vercel/
+
+# 文档/二进制大文件（保留可溯源产物目录，仅在索引时排除）
+outputs/*.docx
+outputs/*_backup.docx
+ab_doc_temps/*.docx
+ab_response_formats/*.docx
+uploads/
+
+# 工具/平台目录
+.streamlit/
+.git/
