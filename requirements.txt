@@ -15,6 +15,7 @@ click==8.1.8
 cryptography==44.0.0
 dateparser==1.2.0
 et_xmlfile==2.0.0
+flask==3.1.0
 ftfy==6.3.1
 gitdb==4.0.12
 GitPython==3.1.44
@@ -64,7 +65,6 @@ typing_extensions==4.12.2
 tzdata==2024.2
 tzlocal==5.2
 urllib3==2.3.0
-validators==0.34.0
 wcwidth==0.2.13
 
 # Document generation
@@ -79,3 +79,18 @@ PyYAML==6.0.2
 
 # Testing
 pytest==8.3.2
+pytest-asyncio==0.24.0
+
+# Async processing and concurrency
+aiofiles==24.1.0
+asyncio-throttle==1.0.2
+
+# Output format conversion
+reportlab==4.2.5  # PDF generation
+weasyprint==62.3  # HTML to PDF
+markdown==3.7     # Markdown processing
+xlsxwriter==3.2.0 # Excel generation
+
+# Progress tracking and monitoring
+tqdm==4.67.1      # Progress bars
+psutil==6.1.0     # System monitoring

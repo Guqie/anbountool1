@@ -19,18 +19,7 @@ import os
 import time
 import random
 from pathlib import Path
-from .utils import (
-    process_lines,
-    process_all_text_paragraphs,
-    add_hyperlinks_post_processing,
-    replace_halfwidth_quotes_with_fullwidth,
-    normalize_spaces_and_convert_punct_except_period,
-    remove_special_symbols,
-    change_digits_letters_punctuation_to_times_new_roman,
-    remove_space_between_chinese_and_digits_letters_punctuation,
-    center_image_description_paragraphs,
-    add_internal_hyperlink,
-    add_bookmark,
+from csv_word_converter.utils import (
     # 新增通用工具函数
     apply_paragraph_format,
     add_return_directory_placeholder,
@@ -39,6 +28,7 @@ from .utils import (
     add_bookmark_to_paragraph_xml,
     compute_heading_level,
     format_title_text,
+    add_internal_hyperlink,
 )
 
 class DocumentTemplate(ABC):
@@ -1118,14 +1108,7 @@ class UniversalDocumentGenerator:
         """文档后处理，包含完整的返回目录功能实现"""
         try:
             # 应用文本处理函数
-            process_all_text_paragraphs(
-                doc,
-                replace_halfwidth_quotes_with_fullwidth,
-                normalize_spaces_and_convert_punct_except_period,
-                remove_special_symbols,
-                change_digits_letters_punctuation_to_times_new_roman,
-                remove_space_between_chinese_and_digits_letters_punctuation
-            )
+
             center_image_description_paragraphs(doc)
             # 关键修复：实现完整的返回目录功能
             # 读取配置

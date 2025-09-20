@@ -3,14 +3,22 @@
 """
 CSV-Word转换工具 - 命令行接口
 
-提供命令行方式调用CSV到Word转换功能。
+提供命令行方式调用CSV到Word转换功能，支持单文件转换、批量处理和多种输出格式。
 
 使用示例:
+    # 单文件转换
     csv2word input.csv --template guoziwei --output ./reports/
     csv-word-convert data.csv -t default -o output.docx --verbose
+    
+    # 批量处理
+    csv2word --batch-dir ./data/ --output-dir ./reports/ --format pdf
+    
+    # 异步处理
+    csv2word input.csv --async --progress
 """
 
 import argparse
+import asyncio
 import logging
 import os
 import sys
@@ -20,10 +28,13 @@ from typing import List, Optional
 from . import (
     __version__,
     configure_logging,
-    csv_to_word_universal,
+    convert_csv_to_word,
     get_available_templates,
     validate_csv_file,
 )
+from .async_converter import AsyncConverter
+from .batch_processor import BatchProcessor, BatchConfig
+from .output_formats import OutputFormatFactory
 
 
 def setup_argument_parser() -> argparse.ArgumentParser:
@@ -35,7 +46,7 @@ def setup_argument_parser() -> argparse.ArgumentParser:
     """
     parser = argparse.ArgumentParser(
         prog="csv2word",
-        description="CSV到Word文档转换工具",
+        description="CSV到Word文档转换工具，支持单文件转换、批量处理和多种输出格式",
         epilog=f"版本: {__version__} | 更多信息请访问项目主页",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -44,8 +55,56 @@ def setup_argument_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "csv_file",
         nargs="?",  # 使CSV文件参数可选
-        help="输入的CSV文件路径",
+        help="输入的CSV文件路径（批量处理时可省略）",
         type=str,
+    )
+
+    # 批量处理参数
+    parser.add_argument(
+        "--batch-dir",
+        dest="batch_dir",
+        help="批量处理：指定包含CSV文件的目录",
+        type=str,
+    )
+
+    parser.add_argument(
+        "--batch-pattern",
+        dest="batch_pattern",
+        default="*.csv",
+        help="批量处理：CSV文件匹配模式 (默认: *.csv)",
+        type=str,
+    )
+
+    parser.add_argument(
+        "--max-workers",
+        dest="max_workers",
+        type=int,
+        default=4,
+        help="批量处理：最大并发工作线程数 (默认: 4)",
+    )
+
+    # 输出格式参数
+    parser.add_argument(
+        "--format",
+        dest="output_format",
+        choices=["word", "pdf", "html", "markdown", "excel", "json"],
+        default="word",
+        help="输出格式 (默认: word)",
+    )
+
+    # 异步处理参数
+    parser.add_argument(
+        "--async",
+        dest="use_async",
+        action="store_true",
+        help="启用异步处理模式",
+    )
+
+    parser.add_argument(
+        "--progress",
+        dest="show_progress",
+        action="store_true",
+        help="显示处理进度",
     )
 
     # 可选参数
@@ -141,6 +200,14 @@ def setup_argument_parser() -> argparse.ArgumentParser:
         version=f"%(prog)s {__version__}",
     )
 
+    # 服务器端口（用于Heroku等云平台部署）
+    parser.add_argument(
+        "--port",
+        dest="port",
+        type=int,
+        help="服务器端口号（用于云平台部署，如Heroku）",
+    )
+
     return parser
 
 
@@ -158,9 +225,20 @@ def validate_arguments(args: argparse.Namespace) -> bool:
     if args.list_templates:
         return True
     
-    # 检查是否提供了CSV文件
+    # 批量处理模式验证
+    if args.batch_dir:
+        if not os.path.exists(args.batch_dir):
+            print(f"错误: 批量处理目录不存在: {args.batch_dir}", file=sys.stderr)
+            return False
+        if not os.path.isdir(args.batch_dir):
+            print(f"错误: 批量处理路径不是目录: {args.batch_dir}", file=sys.stderr)
+            return False
+        # 批量处理模式下不需要单个CSV文件
+        return True
+    
+    # 单文件处理模式验证
     if not args.csv_file:
-        print("错误: 需要提供CSV文件路径", file=sys.stderr)
+        print("错误: 需要提供CSV文件路径或使用 --batch-dir 进行批量处理", file=sys.stderr)
         return False
     
     # 检查CSV文件是否存在
@@ -180,6 +258,11 @@ def validate_arguments(args: argparse.Namespace) -> bool:
     # 检查冲突参数
     if args.verbose and args.quiet:
         print("错误: --verbose 和 --quiet 参数不能同时使用", file=sys.stderr)
+        return False
+
+    # 检查批量处理参数
+    if args.max_workers < 1:
+        print("错误: --max-workers 必须大于0", file=sys.stderr)
         return False
 
     return True
@@ -208,6 +291,111 @@ def list_available_templates() -> None:
     print("可用的Word文档模板:")
     for i, template in enumerate(templates, 1):
         print(f"  {i}. {template}")
+
+
+async def process_single_file_async(
+    csv_file: str,
+    template_type: str,
+    output_format: str,
+    output_dir: str,
+    show_progress: bool = False
+) -> Optional[str]:
+    """
+    异步处理单个CSV文件
+    
+    参数:
+        csv_file: CSV文件路径
+        template_type: 模板类型
+        output_format: 输出格式
+        output_dir: 输出目录
+        show_progress: 是否显示进度
+        
+    返回:
+        Optional[str]: 输出文件路径，失败时返回None
+    """
+    converter = AsyncConverter()
+    
+    def progress_callback(progress: float, message: str):
+        if show_progress:
+            print(f"进度: {progress:.1%} - {message}")
+    
+    try:
+        result = await converter.convert_single_async(
+            csv_file=csv_file,
+            template_type=template_type,
+            output_format=output_format,
+            output_dir=output_dir,
+            progress_callback=progress_callback
+        )
+        return result
+    except Exception as e:
+        print(f"异步转换失败: {e}")
+        return None
+
+
+def process_batch_files(
+    batch_dir: str,
+    pattern: str,
+    template_type: str,
+    output_format: str,
+    output_dir: str,
+    max_workers: int,
+    show_progress: bool = False
+) -> bool:
+    """
+    批量处理CSV文件
+    
+    参数:
+        batch_dir: 批量处理目录
+        pattern: 文件匹配模式
+        template_type: 模板类型
+        output_format: 输出格式
+        output_dir: 输出目录
+        max_workers: 最大工作线程数
+        show_progress: 是否显示进度
+        
+    返回:
+        bool: 处理是否成功
+    """
+    try:
+        # 配置批量处理器
+        config = BatchConfig(
+            input_directory=batch_dir,
+            output_directory=output_dir,
+            file_pattern=pattern,
+            template_type=template_type,
+            output_format=output_format,
+            max_workers=max_workers,
+            enable_progress=show_progress
+        )
+        
+        processor = BatchProcessor(config)
+        
+        def progress_callback(completed: int, total: int, current_file: str):
+            if show_progress:
+                progress = completed / total if total > 0 else 0
+                print(f"批量处理进度: {progress:.1%} ({completed}/{total}) - 当前: {current_file}")
+        
+        # 执行批量处理
+        result = processor.process_batch(progress_callback=progress_callback)
+        
+        # 显示结果统计
+        print(f"\n批量处理完成:")
+        print(f"  成功: {result.successful_count}")
+        print(f"  失败: {result.failed_count}")
+        print(f"  总计: {result.total_count}")
+        print(f"  耗时: {result.total_time:.2f}秒")
+        
+        if result.failed_files:
+            print(f"\n失败的文件:")
+            for file_path, error in result.failed_files.items():
+                print(f"  - {file_path}: {error}")
+        
+        return result.failed_count == 0
+        
+    except Exception as e:
+        print(f"批量处理失败: {e}")
+        return False
 
 
 def validate_csv_and_report(csv_file: str) -> bool:
@@ -259,35 +447,82 @@ def main() -> int:
             list_available_templates()
             return 0
 
+        # 如果指定了端口参数，启动Web服务器模式
+        if hasattr(args, 'port') and args.port:
+            logger.info(f"启动Web服务器模式，端口: {args.port}")
+            from .web_server import start_web_server
+            start_web_server(port=args.port)
+            return 0
+
         # 验证参数
         if not validate_arguments(args):
             return 1
 
         # 仅验证模式
         if args.validate_only:
+            if args.batch_dir:
+                print("批量模式下不支持仅验证选项")
+                return 1
             success = validate_csv_and_report(args.csv_file)
             return 0 if success else 1
 
-        # 执行转换
-        logger.info(f"开始转换CSV文件: {args.csv_file}")
-        logger.info(f"使用模板: {args.template_type}")
+        # 批量处理模式
+        if args.batch_dir:
+            logger.info(f"开始批量处理: {args.batch_dir}")
+            success = process_batch_files(
+                batch_dir=args.batch_dir,
+                pattern=args.batch_pattern,
+                template_type=args.template_type,
+                output_format=args.format,
+                output_dir=args.output_dir or "outputs",
+                max_workers=args.max_workers,
+                show_progress=args.progress
+            )
+            return 0 if success else 1
 
-        # 准备转换参数
-        convert_kwargs = {
-            "csv_file": args.csv_file,
-            "template_type": args.template_type,
-        }
+        # 单文件处理模式
+        if args.async_mode:
+            # 异步处理单个文件
+            logger.info(f"开始异步转换CSV文件: {args.csv_file}")
+            result_path = asyncio.run(process_single_file_async(
+                csv_file=args.csv_file,
+                template_type=args.template_type,
+                output_format=args.format,
+                output_dir=args.output_dir or "outputs",
+                show_progress=args.progress
+            ))
+        else:
+            # 同步处理单个文件
+            logger.info(f"开始转换CSV文件: {args.csv_file}")
+            logger.info(f"使用模板: {args.template_type}")
 
-        # 添加可选参数
-        if args.output_path:
-            convert_kwargs["output_file"] = args.output_path
+            # 准备转换参数
+            convert_kwargs = {
+                "csv_file": args.csv_file,
+                "template_type": args.template_type,
+            }
 
-        # 注意：csv_to_word_universal函数目前只支持csv_file, template_type, config_path参数
-        # 其他参数如download_images, image_timeout等暂时不传递
+            # 添加可选参数
+            if args.output_path:
+                # 如果指定了完整的输出文件路径，提取目录部分作为output_dir
+                import os
+                output_dir = os.path.dirname(args.output_path)
+                if output_dir:
+                    convert_kwargs["output_dir"] = output_dir
 
-        # 执行转换
-        result_path = csv_to_word_universal(**convert_kwargs)
+            # 执行转换
+            result_path = convert_csv_to_word(**convert_kwargs)
 
+            # 如果需要转换为其他格式
+            if args.format != "docx" and result_path:
+                from .output_formats import convert_to_format
+                result_path = convert_to_format(
+                    input_path=result_path,
+                    output_format=args.format,
+                    output_dir=args.output_dir or "outputs"
+                )
+
+        # 检查结果
         if result_path and os.path.exists(result_path):
             print(f"✓ 转换成功! 输出文件: {result_path}")
 
@@ -308,7 +543,6 @@ def main() -> int:
         logger.error(f"转换过程中出现错误: {e}")
         if args.verbose:
             import traceback
-
             traceback.print_exc()
         return 1
 

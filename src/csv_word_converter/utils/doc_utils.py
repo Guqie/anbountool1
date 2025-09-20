@@ -14,25 +14,11 @@ from docx.shared import Pt
 
 # 当前阶段采用“转发导出”，保持与历史实现完全兼容
 # 后续如需替换底层实现，可在此处改为自有实现或桥接到其他模块
-from csv_to_word import (
-    add_bookmark,
-    add_hyperlinks_post_processing,
-    add_internal_hyperlink,
-    center_image_description_paragraphs,
-    change_digits_letters_punctuation_to_times_new_roman,
-    convert_to_fullwidth,
-    normalize_spaces_and_convert_punct_except_period,
-    parse_content,
-    process_all_text_paragraphs,
-    process_lines,
-    remove_space_between_chinese_and_digits_letters_punctuation,
-    remove_special_symbols,
-    replace_halfwidth_quotes_with_fullwidth,
-)
+
 
 __all__ = [
     "process_lines",
-    "process_all_text_paragraphs",
+
     "add_hyperlinks_post_processing",
     "replace_halfwidth_quotes_with_fullwidth",
     "remove_special_symbols",
@@ -43,7 +29,7 @@ __all__ = [
     "parse_content",
     "normalize_spaces_and_convert_punct_except_period",
     "add_internal_hyperlink",
-    "add_bookmark",
+
     # 新增通用工具导出
     "apply_paragraph_format",
     "compute_heading_level",

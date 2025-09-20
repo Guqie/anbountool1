@@ -13,8 +13,8 @@ CSV-Word转换工具包
 - 批量处理能力
 
 使用示例:
-    >>> from csv_word_converter import csv_to_word_universal
-    >>> result = csv_to_word_universal(
+    >>> from csv_word_converter import convert_csv_to_word
+    >>> result = convert_csv_to_word(
     ...     csv_file="data.csv",
     ...     template_type="guoziwei"
     ... )
@@ -37,59 +37,20 @@ __license__ = "MIT"
 # 配置日志
 logger = logging.getLogger(__name__)
 
-# 导入核心功能
-try:
-    from .core import (
-        ConfigBasedTemplate,
-        DocumentTemplate,
-        UniversalDocumentGenerator,
-        csv_to_word_universal,
-    )
-
-    # 导入工具函数
-    from .utils.doc_utils import (
-        create_target_bookmark_by_keyword_enhanced,
-        apply_paragraph_format,
-        add_internal_hyperlink,
-        add_bookmark,
-    )
-    from .utils.image_downloader import (
-        EnhancedImageDownloader,
-    )
-
-except ImportError as e:
-    logger.warning(f"部分模块导入失败: {e}")
-
-    # 定义基本的占位符函数
-    def csv_to_word_universal(*args, **kwargs):
-        """占位符函数，实际实现在core模块中"""
-        raise ImportError("核心模块未正确导入，请检查依赖安装")
-
 
 # 公共API列表
 __all__ = [
     # 版本信息
     "__version__",
     # 核心功能
-    "csv_to_word_universal",
+    "convert_csv_to_word",
     "validate_csv_file", 
     "get_available_templates",
-    # 模板类
-    "DocumentTemplate",
-    "ConfigBasedTemplate",
-    # 文档生成器
-    "UniversalDocumentGenerator",
-    # 工具函数
-    "convert_csv_to_word",
-    "list_templates",
-    "validate_csv",
-    # 工具类
-    "EnhancedImageDownloader",
-    # 工具函数
-    "create_target_bookmark_by_keyword_enhanced",
-    "apply_paragraph_format",
-    "add_internal_hyperlink",
-    "add_bookmark",
+    # 核心类（按需导入）
+    # "DocumentTemplate",
+    # "ConfigBasedTemplate",
+    # "UniversalDocumentGenerator",
+    # "EnhancedImageDownloader",
 ]
 
 
@@ -114,8 +75,12 @@ def convert_csv_to_word(
         ValueError: 模板类型不支持
         RuntimeError: 转换过程中出现错误
     """
+    # 延迟导入核心函数以避免循环依赖
+    from .core import csv_to_word_universal
     try:
-        return csv_to_word_universal(csv_file=csv_file, template_type=template_type, output_dir=output_dir, **kwargs)
+        # csv_to_word_universal函数只接受csv_file, template_type, config_path参数
+        # 忽略output_dir参数，因为该函数内部会自动生成输出路径
+        return csv_to_word_universal(csv_file=csv_file, template_type=template_type, **kwargs)
     except Exception as e:
         logger.error(f"CSV转Word失败: {e}")
         raise
@@ -129,12 +94,13 @@ def get_available_templates() -> List[str]:
         List[str]: 可用模板名称列表
     """
     try:
-        # 使用TemplateFactory获取实际可用的模板
+        # 延迟导入以避免循环依赖
         from .core import TemplateFactory
         factory = TemplateFactory()
         return factory.get_available_templates()
     except Exception:
         # 如果配置文件不存在或有问题，返回默认列表
+        logger.warning("无法从TemplateFactory加载模板列表，返回默认值。")
         return ["guoziwei"]
 
 
@@ -152,7 +118,6 @@ def validate_csv_file(csv_file: str) -> Dict[str, Any]:
         FileNotFoundError: 文件不存在
     """
     import os
-
     import pandas as pd
 
     if not os.path.exists(csv_file):
